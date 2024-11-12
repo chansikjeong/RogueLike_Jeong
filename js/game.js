@@ -92,7 +92,55 @@ const mon_img = [
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠽⣿⣿⣕⠐⣚⣼⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠦⢄⣽⣿⠿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀`,
+  `                         -.                     
+                          ---.                    
+                         :~.~,                    
+                   .:,  :: ,~.                    
+                   ;~~.-:  ,-                     
+                   :.--~   ,-                     
+                   :,.~.   --                     
+                   ~-     .~:~~-                  
+                   ,~     .;~,.;                  
+                   .~         :,                  
+               ...::~        ~-                   
+            .,-:~~          ~:                    
+           ,:-,.           ,~.                    
+          --,             .:,                     
+         --                -:.          ,~,       
+        ,-                  -:        -;~,:       
+       ,:,                   ~-     .:~  -:       
+       :.      .              :,  .~~.  .~.       
+       ~-.                    ,;,.~~  ...~.       
+       ,:;.         -.         ,,:-  .. .~.       
+        -!-        ~.         ..:~  .   .~.       
+        ,!~       ~  .......... :  .    .~.       
+        -:,      ,  ......  . .   ...   ,-        
+        --         ,          .  ..     -,        
+       .~.        .              .     .~.        
+        -, .                    ..    .~,         
+        ,-  .                .  ,     :.          
+        ,-.. .             .    .    .:           
+        .-,:,..       .      .  .    ~-           
+         ---;:,. .      .  ,-~-      ~~           
+         .~.:~~-,~-      ,~:-.:      ~-           
+          --.:,-~;-      ,:.  ~~    .:.           
+           : :~-,:        :,   ;     ;            
+           ,:,:~,.        .~   :-   :,            
+            ;.~-, ,       .~.   :  ~:             
+            ;.~,-.; -~  .,,--   -- ~.             
+            ;.~.~.~-:~~ ~-~~,   .~.~.             
+            ;.~ -~.:~.~~; ...    -::.             
+            ;.~  :,.;- ,.         ..              
+            ;:,   :,.:~.                          
+            ,-     ~~.-:,.                        
+                    ~~-~;-                        
+                     .,,,.                        
+`,
 ];
+let logs = [];
+let ph = parseInt(Math.random() * 10);
+let ps = parseInt(Math.random() * 3);
+let pd = parseInt(Math.random() * 2);
 
 class Player {
   constructor(hp, str, def) {
@@ -100,11 +148,31 @@ class Player {
     this.str = str;
     this.def = def;
   }
-
   attack(player, monster) {
     // 플레이어의 공격
     monster.hp -= player.str;
   }
+
+  maAtk(player, monster) {
+    // 플레이어의 연속 행동
+    let numAtk = Math.round(Math.random() * 10);
+    let numAtkDmg = Math.round(0.7 * player.str * numAtk);
+    if (numAtk !== 0) {
+      monster.hp -= numAtkDmg;
+      logs.push(chalk.blue(`${numAtk}회(총 ${numAtkDmg} 데미지) 챔질 성공했습니다.`));
+    } else {
+      logs.push('공격에 실패했습니다.');
+    }
+  }
+
+  // check(){
+  //   if(player.def > monster.atk){
+
+  //   }else{
+
+  //   }
+  // }
+  // run(){}
 }
 
 class Monster {
@@ -138,39 +206,44 @@ function displayStatus(stage, player, monster) {
 }
 
 const battle = async (stage, player, monster) => {
-  let logs = [];
-
   while (player.hp > 0 && monster.hp > 0) {
     console.clear();
     displayStatus(stage, player, monster);
-
     logs.forEach((log) => console.log(log));
 
-    console.log(chalk.green(`\n1. 챔질하기 \n2. 뜰채 사용`));
+    console.log(chalk.green(`\n1. 챔질하기 \n2. 연속 챔질하기 \n3. 뜰채 사용`));
     const choice = readlineSync.question('당신의 선택은? ');
 
-    if (monster.hp < 1) {
-      player.hp += 30;
-      player.str += 3;
-      player.def += 1;
-      break;
-    } else {
-      switch (Number(choice)) {
-        case 1:
-          player.attack(player, monster);
-          monster.attack(monster, player);
-          logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
-          logs.push(chalk.blue(`${player.str}의 데미지를 입혔습니다.`));
-          logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
-          break;
-        case 2:
-          logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
-          break;
-      }
+    switch (Number(choice)) {
+      case 1:
+        logs.push(chalk.cyan(`=============================================================`));
+        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        player.attack(player, monster);
+        monster.attack(monster, player);
+        logs.push(chalk.blue(`${player.str}의 데미지를 입혔습니다.`));
+        logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
+        break;
+      case 2:
+        logs.push(chalk.cyan(`=============================================================`));
+        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        player.maAtk(player, monster);
+        monster.attack(monster, player);
+        logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
     }
+
     // 플레이어의 선택에 따라 다음 행동 처리
     // logs.push(chalk.green(`${choice}를 선택하셨습니다.`));
   }
+  // 스테이지 증가에 따른 스탯 증가
+  console.clear();
+  player.hp += ph;
+  player.str += ps;
+  player.def += pd;
 };
 
 export async function startGame() {
@@ -185,9 +258,14 @@ export async function startGame() {
       Math.floor(stage * 0.8) + 1,
     );
     await battle(stage, player, monster);
-
     // 스테이지 클리어 및 게임 종료 조건
-
+    logs.splice(0, logs.length);
+    logs.push(`hp가 ${ph}만큼 증가했습니다.`);
+    logs.push(`공격력이 ${ps}만큼 증가했습니다.`);
+    logs.push(`정신력이 ${pd}만큼 증가했습니다.`);
+    // await stopstage();
     stage++;
   }
+  console.clear();
+  console.log('클리어를 축하합니다!');
 }
