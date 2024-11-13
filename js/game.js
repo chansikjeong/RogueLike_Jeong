@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import readlineSync from 'readline-sync';
-
+// 전역 스코프 모음
 const mon_name = [
   '개구리',
   '송사리',
@@ -138,19 +138,22 @@ const mon_img = [
 `,
 ];
 let logs = [];
+//30프로 에서 100프로 사이의 공격
 let ph = parseInt(Math.random() * 10);
-let ps = parseInt(Math.random() * 3);
-let pd = parseInt(Math.random() * 2);
+let ps = parseInt(Math.random() * 3) + 3;
+let pd = parseInt(Math.random() * 2) + 2;
 
+//Class 생산자
 class Player {
   constructor(hp, str, def) {
     this.hp = hp;
     this.str = str;
     this.def = def;
   }
+
   attack(player, monster) {
     // 플레이어의 공격
-    monster.hp -= player.str;
+    monster.hp -= Math.round(player.str * 1 - Math.random() * 0.7);
   }
 
   maAtk(player, monster) {
@@ -162,6 +165,21 @@ class Player {
       logs.push(chalk.blue(`${numAtk}회(총 ${numAtkDmg} 데미지) 챔질 성공했습니다.`));
     } else {
       logs.push('공격에 실패했습니다.');
+    }
+  }
+  // 뜰채 사용에 대한 값
+
+  endStg(stage, player, monster) {
+    let proStg = Math.floor((10 * stage + 10) / monster.hp);
+    let pVSm = Math.floor((monster.hp / player.hp) * Math.random());
+    if (proStg > 0) {
+      if (Math.random() > 0.5) {
+        monster.hp = 0;
+      } else {
+        logs.push('뜰체질에 실패했습니다.');
+      }
+    } else {
+      logs.push('뜰채 사용에 실패했습니다.');
     }
   }
 
@@ -186,14 +204,17 @@ class Monster {
     // 몬스터의 공격
     player.hp -= monster.str;
   }
+
+  // 새로운 동작 만들기
 }
 
+// 함수들 모음
 function displayStatus(stage, player, monster) {
   console.log(chalk.magentaBright(`\n=== Current Status ===`));
   console.log(
     chalk.cyanBright(`| Stage: ${stage} `) +
       chalk.blueBright(`| 플레이어 정보 `) +
-      ` 현재체력 : ${player.hp} 공격력 : ${player.str} 방어력 : ${player.def}` +
+      ` 현재체력 : ${player.hp} 공격력 : ${player.str} 정신력 : ${player.def}` +
       chalk.redBright(`
            | 물고기 정보 | ${mon_name[stage - 1]}`) +
       ` 체력 : ${monster.hp} 공격력 : ${monster.str} 방어력 ${monster.def}`,
@@ -203,6 +224,22 @@ function displayStatus(stage, player, monster) {
     chalk.blue(`${mon_img[stage - 1]}
 `),
   );
+}
+
+function displayNext(stage, player) {
+  player.hp += ph;
+  player.str += ps;
+  player.def += pd;
+  console.log(chalk.cyan(`=============================================================`));
+  console.log(chalk.magentaBright(`\n                   === Game announce ===`));
+  console.log(chalk.cyanBright(`             | Stage: ${stage}를 클리어하셨습니다!! | \n`));
+  console.log(chalk.cyan(`=============================================================\n`));
+  console.log(`                   hp가 ${ph}만큼 증가했습니다.`);
+
+  console.log(`                 공격력이 ${ps}만큼 증가했습니다.`);
+
+  console.log(`                 정신력이 ${pd}만큼 증가했습니다.`);
+  const next = readlineSync.question(chalk.red('\n                  아무키나 입력해 주세요!'));
 }
 
 const battle = async (stage, player, monster) => {
@@ -216,14 +253,20 @@ const battle = async (stage, player, monster) => {
 
     switch (Number(choice)) {
       case 1:
+        logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
         logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
         player.attack(player, monster);
-        monster.attack(monster, player);
-        logs.push(chalk.blue(`${player.str}의 데미지를 입혔습니다.`));
+        if (monster.hp > 0) {
+          monster.attack(monster, player);
+        } else {
+          break;
+        }
+        logs.push(chalk.blue(`${Math.round(player.str)}의 데미지를 입혔습니다.`));
         logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
         break;
       case 2:
+        logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
         logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
         player.maAtk(player, monster);
@@ -231,6 +274,12 @@ const battle = async (stage, player, monster) => {
         logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
         break;
       case 3:
+        logs.splice(0, logs.length);
+        logs.push(chalk.cyan(`=============================================================`));
+        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        player.endStg(stage, player, monster);
+        monster.attack(monster, player);
+        logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
         break;
       case 4:
         break;
@@ -241,9 +290,6 @@ const battle = async (stage, player, monster) => {
   }
   // 스테이지 증가에 따른 스탯 증가
   console.clear();
-  player.hp += ph;
-  player.str += ps;
-  player.def += pd;
 };
 
 export async function startGame() {
@@ -260,12 +306,46 @@ export async function startGame() {
     await battle(stage, player, monster);
     // 스테이지 클리어 및 게임 종료 조건
     logs.splice(0, logs.length);
-    logs.push(`hp가 ${ph}만큼 증가했습니다.`);
-    logs.push(`공격력이 ${ps}만큼 증가했습니다.`);
-    logs.push(`정신력이 ${pd}만큼 증가했습니다.`);
+    displayNext(stage, player);
     // await stopstage();
     stage++;
   }
   console.clear();
-  console.log('클리어를 축하합니다!');
+  console.log(`
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠟⠋⠛⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣤⠴⠒⠚⠛⠛⠛⠿⢿⣟⠛⠛⠿⣿⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⠿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠑⢤⡀⢸⣿⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⠟⠁⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢆⡹⠿⠛⠻⢿⣿⣷⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⠿⠿⠋⠀⠀⠼⢅⡀⠀⠀⠀⠀⠀⢀⠀⠄⣀⠀⠀⠀⠏⢀⡴⠶⣦⠀⢻⣿⣿⡋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠉⠲⢄⡠⠊⠀⠀⠀⠀⠑⡄⠀⠀⣿⡀⠀⠈⢀⣼⣿⣿⡿⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⣿⣿⣿⣿⣿
+⣿⣀⠀⠀⠀⠰⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⡷⠀⠀⠈⠛⢶⡾⠛⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢈⣿⣿⣿⣿⣿
+⣿⣿⣼⢯⣶⣶⣄⡀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⠀⡰⠃⠀⠀⠀⠀⢸⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠘⠛⠿⠿⢿⣿
+⣿⣿⣿⢸⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠈⢺⠉⠀⠀⠀⠀⠀⠀⠏⠉⠳⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠀⠀⠀⠀⢀⣠⣴⣶⣶⣶⣿⣶⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙
+⣿⣿⣿⣎⢿⣿⣿⣿⣿⣷⣦⠄⣀⣀⣀⣀⣀⠀⠀⠑⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣶⣶⣶⣧⣤⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⣿⣿⡿⣿⣿⣿⣿⣿⣶⣿⣿⣿⣿⣿⡿⠖⠀⡼⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢶⡀⠀⠀⠀⠀⠀⢀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣩⡍⠁⣠⣴⣿⣿⣿⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⣿⣿⣿⣷⣭⣝⡛⠛⠛⠛⠛⠛⢉⣁⣠⣴⡾⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣄⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠟⠋⢹⣯⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣆⠀⠀⢸⣿⣿⣿⣿⡟⣵⣆⣠⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡄⠀⢨⣿⣿⣿⣿⠃⣿⣿⣟⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⡿⠿⠟⠛⢻⣿⣿⠟⠁⡤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣧⠀⣴⣿⣿⣿⣯⣾⣿⣯⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀⠀
+⣿⣿⣿⠀⠀⠀⠀⢸⠟⠁⠀⢠⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣥⣿⣿⣿⡿⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀
+⡿⠿⠟⠀⠀⠀⠀⢸⡆⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠾⢿⡟⠛⣁⣉⣻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀
+⣅⠀⠀⠀⠀⠀⠀⠘⡇⠀⠀⠀⢧⡤⠖⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠻⢶⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢱⠀⢀⡴⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠹⣏⣡⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡄
+⠀⠀⠀⠀⠀⠀⠀⠀⢈⣷⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⠿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣟⣉⠛⠋⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷
+⠀⠀⠀⠀⠀⠀⡴⠒⡞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢷⣶⣿⣿⣿⣿⣿⣿⣿⣿⣟⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⠀⠀⠀⠀⠀⠀⣧⠀⣥⣤⣤⣄⣀⣀⣀⣀⣀⣀⣀⣀⣤⣤⣤⣤⣴⣶⣶⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⠀⠀⠀⡀⣤⣴⣎⡤⣭⣿⣭⣭⣍⣉⣭⣉⣭⣭⣭⣉⣉⣻⣿⣟⣻⣿⣛⣛⣛⣻⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⠀⠀⠀⢐⣏⣙⣭⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⠀⠀⠀⠈⣿⣿⣿⣿⣿⣿⣿⣭⣿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣇⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣭⡄⠈⠛⠀⠀⠀⠀⠉⠀⢠⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣭⣭⣩⣭⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+`);
 }
