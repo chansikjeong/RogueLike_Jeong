@@ -23,7 +23,7 @@ function displayLobby() {
   console.log(line);
 
   // 게임 이름
-  console.log(chalk.yellowBright.bold('CLI 게임에 오신것을 환영합니다!'));
+  console.log(chalk.yellowBright.bold('피싱몬 게임에 오신것을 환영합니다!'));
 
   // 설명 텍스트
   console.log(chalk.green('옵션을 선택해주세요.'));

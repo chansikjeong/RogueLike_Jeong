@@ -235,12 +235,14 @@ const mon_img = [
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 `,
 ];
+
 let logs = [];
 //30프로 에서 100프로 사이의 공격
 let ph = parseInt(Math.random() * 10);
 let ps = parseInt(Math.random() * 3) + 3;
 let pd = parseInt(Math.random() * 2) + 2;
-
+// 키워드 성공
+let plus_dmg = 0;
 //Class 생산자
 class Player {
   constructor(hp, str, def, equi) {
@@ -328,6 +330,53 @@ class Monster {
 }
 
 // Fucntion
+// function stop(){
+//   break;
+// }
+
+function displayInputarrow(stage, player) {
+  const ranArrow = [87, 65, 83, 68];
+  let arrows = [];
+
+  console.clear();
+
+  for (let i = 0; i < stage + 1; i++) {
+    var randomValues = ranArrow[Math.floor(Math.random() * ranArrow.length)];
+    arrows.push(String.fromCharCode(randomValues));
+  }
+  console.log(
+    chalk.red(`W,A,S,D 키를 순서대로 입력해주세요 (성공시 공격력 1.2배 / 실패시 공격력 0.8배)`),
+  );
+  const a = readlineSync.question('아무키나 입력하면 랜덤 키 입력이 진행됩니다.');
+  const begin = new Date().getSeconds();
+  const ket_a = readlineSync.question(`${arrows} 키를 순서대로 입력해주세요!`);
+  let end = new Date().getSeconds();
+  if (end < begin) {
+    end += 60;
+  }
+  let time_end = end - begin;
+  let ket_aU = ket_a.toUpperCase();
+  let splitStr = [...ket_aU];
+
+  if (time_end <= 2 + 0.4 * stage && JSON.stringify(arrows) === JSON.stringify(splitStr)) {
+    const ket_b = readlineSync.question(`입력시간 : ${time_end}초 / 성공!`);
+    plus_dmg = 1.2;
+    player.str *= plus_dmg;
+    player.str = Math.round(player.str);
+  } else {
+    const ket_b = readlineSync.question(`입력시간 : ${time_end}초 / 실패!`);
+    plus_dmg = 0.8;
+    player.str *= plus_dmg;
+    player.str = Math.round(player.str);
+  }
+
+  // const key = readlineSync.prompt();
+  // setTimeout(stop,3000);
+  // if (ket_a.toUpperCase === arrows.values) {
+  //   logs.push('정답!');
+  // }
+  // if(arrow == )
+}
 function displayStatus(stage, player, monster) {
   console.log(chalk.magentaBright(`\n=== Current Status ===`));
   console.log(
@@ -397,7 +446,6 @@ const battle = async (stage, player, monster) => {
         logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
         player.maAtk(player, monster);
         monster.attack(monster, player);
-        logs.push(chalk.red(`${monster.str}의 데미지를 입었습니다.`));
         break;
       case 3:
         logs.splice(0, logs.length);
@@ -428,6 +476,7 @@ export async function startGame() {
       Math.floor(stage * 0.8) + 1,
       Math.floor(stage * 0.8) + 1,
     );
+    displayInputarrow(stage, player);
     await battle(stage, player, monster);
     // 스테이지 클리어 및 게임 종료 조건
     if (player.hp < 0) {
@@ -440,7 +489,7 @@ export async function startGame() {
     }
     // await stopstage();
   }
-
+  //승리시
   if (stage >= 10) {
     console.clear();
     console.log(`
@@ -472,6 +521,7 @@ export async function startGame() {
 ──────────────────────────────────────────────────
 `);
   } else {
+    //패배시
     console.log(`
 
   ▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓
