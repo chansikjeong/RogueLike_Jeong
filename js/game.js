@@ -238,9 +238,9 @@ const mon_img = [
 
 let logs = [];
 //30프로 에서 100프로 사이의 공격
-let ph = parseInt(Math.random() * 10) + 20;
-let ps = parseInt(Math.random() * 3) + 3;
-let pd = parseInt(Math.random() * 2) + 2;
+let ph = Math.round(Math.random() * 10) + 20;
+let ps = Math.round(Math.random() * 3) + 3;
+let pd = Math.round(Math.random() * 2) + 2;
 // 키워드 성공
 let plus_dmg = 0;
 //Class 생산자
@@ -261,7 +261,7 @@ class Player {
   // 연속 챔질 구현
   maAtk(player, monster) {
     // 플레이어의 연속 행동
-    let numAtk = Math.round(Math.random() * 4);
+    let numAtk = Math.floor(Math.random() * 4);
     let numAtkDmg = Math.round(0.7 * player.str) * numAtk;
     if (numAtk !== 0) {
       monster.hp -= numAtkDmg;
@@ -426,7 +426,7 @@ const battle = async (stage, player, monster) => {
 
     console.log(
       chalk.green(
-        `\n1. 강한 챔질하기(100%) \n2. 연속 챔질하기 / 공격력의 0.7배 * 1~4회 공격 (75% 성공) \n3. 뜰채 사용 / 몬스터 hp가 ${stage * 10} 이하 일때 사용가능(50%)`,
+        `\n1. 강한 챔질하기(100%) \n2. 연속 챔질하기 / 공격력의 0.7배 * 1~3회 공격 (75% 성공) \n3. 뜰채 사용 / 몬스터 hp가 ${stage * 10} 이하 일때 사용가능(50%)`,
       ),
     );
     const choice = readlineSync.question('당신의 선택은? ');
