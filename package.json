@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "chcp 65001 && node server.js",
-    "dev": "chcp 65001 && nodemon server.js"
+    "start": "chcp 65001 && node js/server.js",
+    "dev": "chcp 65001 && nodemon js/server.js"
   },
   "keywords": [],
   "author": "",
