@@ -2,16 +2,16 @@ import chalk from 'chalk';
 import readlineSync from 'readline-sync';
 // 전역 스코프 모음
 const mon_name = [
-  '개구리',
-  '송사리',
-  '금붕어',
-  '배스',
-  '가물치',
-  '고등어',
-  '참치',
-  '삼치',
-  '민어',
-  '청새치',
+  '발챙이',
+  '잉어킹',
+  '파르셀',
+  '침바루',
+  '맨돌핀',
+  '고래왕',
+  '라프라스',
+  '갸라도스',
+  '가이오가',
+  '루기아',
 ];
 const mon_img = [
   `
@@ -238,7 +238,7 @@ const mon_img = [
 
 let logs = [];
 //30프로 에서 100프로 사이의 공격
-let ph = parseInt(Math.random() * 10);
+let ph = parseInt(Math.random() * 10) + 20;
 let ps = parseInt(Math.random() * 3) + 3;
 let pd = parseInt(Math.random() * 2) + 2;
 // 키워드 성공
@@ -261,8 +261,8 @@ class Player {
   // 연속 챔질 구현
   maAtk(player, monster) {
     // 플레이어의 연속 행동
-    let numAtk = Math.round(Math.random() * 10);
-    let numAtkDmg = Math.round(0.7 * player.str * numAtk);
+    let numAtk = Math.round(Math.random() * 4);
+    let numAtkDmg = Math.round(0.7 * player.str) * numAtk;
     if (numAtk !== 0) {
       monster.hp -= numAtkDmg;
       logs.push(chalk.blue(`${numAtk}회(총 ${numAtkDmg} 데미지) 챔질 성공했습니다.`));
@@ -273,13 +273,15 @@ class Player {
 
   // 뜰채 사용 구현 코드
   endStg(stage, player, monster) {
-    let proStg = Math.floor((10 * stage + 10) / monster.hp);
+    let delEqui = Math.round(100 / player.def);
+    let proStg = Math.floor((10 * stage) / monster.hp);
     if (proStg > 0) {
-      if (Math.random() > 0.5) {
+      if (Math.random() > 0.7) {
         monster.hp = 0;
       } else {
-        player.equi -= 100 / player.def;
+        player.equi -= delEqui;
         logs.push('뜰채질에 실패했습니다.');
+        logs.push(`장비 내구도가 ${delEqui} 감소 하였습니다`);
       }
     } else {
       logs.push('뜰채 사용에 실패했습니다.');
@@ -335,17 +337,19 @@ class Monster {
 // }
 
 function displayInputarrow(stage, player) {
-  const ranArrow = [87, 65, 83, 68];
+  const ranArrow = ['A', 'S', 'D', 'W'];
   let arrows = [];
 
   console.clear();
 
   for (let i = 0; i < stage + 1; i++) {
     var randomValues = ranArrow[Math.floor(Math.random() * ranArrow.length)];
-    arrows.push(String.fromCharCode(randomValues));
+    arrows.push(randomValues);
   }
   console.log(
-    chalk.red(`W,A,S,D 키를 순서대로 입력해주세요 (성공시 공격력 1.2배 / 실패시 공격력 0.8배)`),
+    chalk.red(
+      `W,A,S,D 키를 순서대로 입력해주세요 제한시간 : ${Math.floor(2 + 0.2 * stage)}초 (성공시 공격력 1.2배 / 실패시 공격력 0.8배)`,
+    ),
   );
   const a = readlineSync.question('아무키나 입력하면 랜덤 키 입력이 진행됩니다.');
   const begin = new Date().getSeconds();
@@ -358,7 +362,10 @@ function displayInputarrow(stage, player) {
   let ket_aU = ket_a.toUpperCase();
   let splitStr = [...ket_aU];
 
-  if (time_end <= 2 + 0.4 * stage && JSON.stringify(arrows) === JSON.stringify(splitStr)) {
+  if (
+    time_end <= Math.floor(2 + 0.2 * stage) &&
+    JSON.stringify(arrows) === JSON.stringify(splitStr)
+  ) {
     const ket_b = readlineSync.question(`입력시간 : ${time_end}초 / 성공!`);
     plus_dmg = 1.2;
     player.str *= plus_dmg;
@@ -407,24 +414,28 @@ function displayNext(stage, player) {
 
   console.log(`                 공격력이 ${ps}만큼 증가했습니다.`);
 
-  console.log(`                 정신력이 ${pd}만큼 증가했습니다.`);
+  console.log(`                장비가도가 ${pd}만큼 증가했습니다.`);
   const next = readlineSync.question(chalk.red('\n                  아무키나 입력해 주세요!'));
 }
 
 const battle = async (stage, player, monster) => {
-  while (player.hp > 0 && monster.hp > 0) {
+  while (player.hp > 0 && monster.hp > 0 && player.equi > 0) {
     console.clear();
     displayStatus(stage, player, monster);
     logs.forEach((log) => console.log(log));
 
-    console.log(chalk.green(`\n1. 챔질하기 \n2. 연속 챔질하기 \n3. 뜰채 사용`));
+    console.log(
+      chalk.green(
+        `\n1. 강한 챔질하기(100%) \n2. 연속 챔질하기 / 공격력의 0.7배 * 1~4회 공격 (75% 성공) \n3. 뜰채 사용 / 몬스터 hp가 ${stage * 10} 이하 일때 사용가능(50%)`,
+      ),
+    );
     const choice = readlineSync.question('당신의 선택은? ');
 
     switch (Number(choice)) {
       case 1:
         logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
-        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        logs.push(chalk.green(`챔질을 선택하셨습니다.`));
         player.attack(player, monster);
         if (Math.random() > 0.3) {
           if (monster.hp > 0) {
@@ -443,19 +454,20 @@ const battle = async (stage, player, monster) => {
       case 2:
         logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
-        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        logs.push(chalk.green(`연속챔질을 선택하셨습니다.`));
         player.maAtk(player, monster);
         monster.attack(monster, player);
         break;
       case 3:
         logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
-        logs.push(chalk.green(`${choice}를(을) 선택하셨습니다.`));
+        logs.push(chalk.green(`상남자식 뜰채사용을 선택하셨습니다.`));
         player.endStg(stage, player, monster);
         monster.attack(monster, player);
         break;
-      case 4:
-        break;
+      default:
+        logs.push(chalk.red('올바른 선택을 하세요.'));
+        battle();
     }
 
     // 플레이어의 선택에 따라 다음 행동 처리
