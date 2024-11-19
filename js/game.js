@@ -240,9 +240,8 @@ let logs = [];
 //30프로 에서 100프로 사이의 공격
 let ph = Math.round(Math.random() * 10) + 20;
 let ps = Math.round(Math.random() * 3) + 3;
-let pd = Math.round(Math.random() * 2) + 2;
-// 키워드 성공
-let plus_dmg = 0;
+let pd = Math.round(Math.random() * 1) + 1;
+
 //Class 생산자
 class Player {
   constructor(hp, str, def, equi) {
@@ -287,15 +286,6 @@ class Player {
       logs.push('뜰채 사용에 실패했습니다.');
     }
   }
-
-  // check(){
-  //   if(player.def > monster.atk){
-
-  //   }else{
-
-  //   }
-  // }
-  // run(){}
 }
 
 class Monster {
@@ -327,14 +317,7 @@ class Monster {
       );
     }
   }
-
-  // 새로운 동작 만들기
 }
-
-// Fucntion
-// function stop(){
-//   break;
-// }
 
 function displayInputarrow(stage, player) {
   const ranArrow = ['A', 'S', 'D', 'W'];
@@ -348,7 +331,7 @@ function displayInputarrow(stage, player) {
   }
   console.log(
     chalk.red(
-      `W,A,S,D 키를 순서대로 입력해주세요 제한시간 : ${Math.floor(2 + 0.2 * stage)}초 (성공시 공격력 1.2배 / 실패시 공격력 0.8배)`,
+      `W,A,S,D 키를 순서대로 입력해주세요 제한시간 : ${Math.floor(2 + 0.2 * stage)}초 (성공시 장비 내구도 : 100 / 실패시 장비 내구도 : ${100 - stage * 5})`,
     ),
   );
   const a = readlineSync.question('아무키나 입력하면 랜덤 키 입력이 진행됩니다.');
@@ -367,28 +350,17 @@ function displayInputarrow(stage, player) {
     JSON.stringify(arrows) === JSON.stringify(splitStr)
   ) {
     const ket_b = readlineSync.question(`입력시간 : ${time_end}초 / 성공!`);
-    plus_dmg = 1.2;
-    player.str *= plus_dmg;
-    player.str = Math.round(player.str);
   } else {
     const ket_b = readlineSync.question(`입력시간 : ${time_end}초 / 실패!`);
-    plus_dmg = 0.8;
-    player.str *= plus_dmg;
-    player.str = Math.round(player.str);
+    player.equi = 100 - stage * 5;
   }
-
-  // const key = readlineSync.prompt();
-  // setTimeout(stop,3000);
-  // if (ket_a.toUpperCase === arrows.values) {
-  //   logs.push('정답!');
-  // }
-  // if(arrow == )
 }
+
 function displayStatus(stage, player, monster) {
   console.log(chalk.magentaBright(`\n=== Current Status ===`));
   console.log(
     chalk.cyanBright(`| Stage: ${stage} `) +
-      chalk.blueBright(`| 플레이어 정보 `) +
+      chalk.blueBright(`| 플레이어 정보 | `) +
       ` 현재체력 : ${player.hp} 공격력 : ${player.str} 장비 강도 : ${player.def} 장비 내구도 : ${player.equi}` +
       chalk.redBright(`
            | 물고기 정보 | ${mon_name[stage - 1]}`) +
@@ -414,7 +386,8 @@ function displayNext(stage, player) {
 
   console.log(`                 공격력이 ${ps}만큼 증가했습니다.`);
 
-  console.log(`                장비가도가 ${pd}만큼 증가했습니다.`);
+  console.log(`                장비 강도가 ${pd}만큼 증가했습니다.`);
+  console.log(`                  장비 내구도가 100이 되었습니다.`);
   const next = readlineSync.question(chalk.red('\n                  아무키나 입력해 주세요!'));
 }
 
@@ -426,7 +399,7 @@ const battle = async (stage, player, monster) => {
 
     console.log(
       chalk.green(
-        `\n1. 강한 챔질하기(100%) \n2. 연속 챔질하기 / 공격력의 0.7배 * 1~3회 공격 (75% 성공) \n3. 뜰채 사용 / 몬스터 hp가 ${stage * 10} 이하 일때 사용가능(50%)`,
+        `\n1. 강한 챔질하기${chalk.red(' (100%)')} \n2. 연속 챔질하기 / ${chalk.blue('공격력의 0.7배 * 1~3회 공격')} ${chalk.red('(75%)')} \n3. 뜰채 사용 /  ${chalk.blue(`몬스터 hp가 ${chalk.red(stage * 10)} 이하 일때 사용가능`)} ${chalk.red('(30%)')}`,
       ),
     );
     const choice = readlineSync.question('당신의 선택은? ');
@@ -456,22 +429,43 @@ const battle = async (stage, player, monster) => {
         logs.push(chalk.cyan(`=============================================================`));
         logs.push(chalk.green(`연속챔질을 선택하셨습니다.`));
         player.maAtk(player, monster);
-        monster.attack(monster, player);
+        if (Math.random() > 0.3) {
+          if (monster.hp > 0) {
+            monster.attack(monster, player);
+          } else {
+            break;
+          }
+        } else {
+          if (monster.hp > 0) {
+            monster.resist(monster, player);
+          } else {
+            break;
+          }
+        }
         break;
       case 3:
         logs.splice(0, logs.length);
         logs.push(chalk.cyan(`=============================================================`));
         logs.push(chalk.green(`상남자식 뜰채사용을 선택하셨습니다.`));
         player.endStg(stage, player, monster);
-        monster.attack(monster, player);
+        if (Math.random() > 0.3) {
+          if (monster.hp > 0) {
+            monster.attack(monster, player);
+          } else {
+            break;
+          }
+        } else {
+          if (monster.hp > 0) {
+            monster.resist(monster, player);
+          } else {
+            break;
+          }
+        }
         break;
       default:
         logs.push(chalk.red('올바른 선택을 하세요.'));
         battle();
     }
-
-    // 플레이어의 선택에 따라 다음 행동 처리
-    // logs.push(chalk.green(`${choice}를 선택하셨습니다.`));
   }
   // 스테이지 증가에 따른 스탯 증가
   console.clear();
